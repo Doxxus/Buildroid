@@ -1,0 +1,32 @@
+# Add these to the existing .github/workflows/publish-bundle.yml in the TARGET site repo.
+# Prereqs: copy tools/sign-bundle.mjs into that repo (e.g. tools/sign-bundle.mjs) and add the
+# repository secret BUNDLE_SIGNING_KEY (private key printed by `node tools/sign-bundle.mjs keygen`).
+#
+# The job needs:  permissions: { contents: write }
+#
+# Assumes earlier steps already built the site into ./dist and set $SHA (= github.sha).
+
+      - name: Create bundle.zip (index.html at the zip root)
+        run: |
+          cd dist
+          zip -r -X ../bundle.zip . -x '*.map'   # -X: no extra file attributes; no symlinks in the site
+          cd ..
+          sha256sum bundle.zip | cut -d' ' -f1 > bundle.sha256
+          echo "${{ github.sha }}" > version.txt
+
+      - name: Sign bundle.zip (ed25519)
+        env:
+          BUNDLE_SIGNING_KEY: ${{ secrets.BUNDLE_SIGNING_KEY }}
+        run: node tools/sign-bundle.mjs sign bundle.zip bundle.sig
+
+      # Delete + recreate so published_at is fresh; the app uses it for rollback protection.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest-bundle --yes --cleanup-tag || true
+          gh release create latest-bundle \
+            --target "${{ github.sha }}" \
+            --title "Bundle ${{ github.sha }}" \
+            --notes "${{ github.sha }}" \
+            bundle.zip bundle.sha256 bundle.sig version.txt
