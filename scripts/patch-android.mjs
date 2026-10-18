@@ -70,6 +70,27 @@ const gradlePath = join(app, 'build.gradle');
 let gradle = readFileSync(gradlePath, 'utf8');
 gradle = gradle.replace(/minifyEnabled\s+false/, 'minifyEnabled true');
 if (!gradle.includes('shrinkResources')) gradle = gradle.replace(/minifyEnabled true/, 'minifyEnabled true\n            shrinkResources true');
+// Release signing: reads RELEASE_* from ~/.gradle/gradle.properties (or -P flags); unsigned if they are absent.
+if (!gradle.includes('signingConfigs')) {
+  gradle = gradle.replace(
+    '    buildTypes {',
+    `    signingConfigs {
+        release {
+            if (project.hasProperty('RELEASE_STORE_FILE')) {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
+        }
+    }
+    buildTypes {`,
+  );
+  gradle = gradle.replace(
+    /(release \{\s*\n\s*minifyEnabled true)/,
+    '$1\n            if (project.hasProperty(\'RELEASE_STORE_FILE\')) signingConfig signingConfigs.release',
+  );
+}
 writeFileSync(gradlePath, gradle);
 
 const proguardPath = join(app, 'proguard-rules.pro');

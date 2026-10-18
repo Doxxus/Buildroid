@@ -39,7 +39,9 @@ function installExternalLinks(): void {
 // Long-press the page title (first <h1>/<header>, or the top-left corner) to open the debug screen.
 function installDebugTrigger(): void {
   let timer: number | undefined;
+  let start = { x: 0, y: 0 };
   const cancel = () => window.clearTimeout(timer);
+  const moved = (x: number, y: number) => Math.hypot(x - start.x, y - start.y) > 12;
   document.addEventListener(
     'pointerdown',
     (ev) => {
@@ -48,11 +50,31 @@ function installDebugTrigger(): void {
       const onCorner = ev.clientX < 56 && ev.clientY < 56;
       if (!onTitle && !onCorner) return;
       cancel();
-      timer = window.setTimeout(() => void openDebug(), LONG_PRESS_MS);
+      start = { x: ev.clientX, y: ev.clientY };
+      timer = window.setTimeout(() => {
+        window.getSelection()?.removeAllRanges();
+        void openDebug();
+      }, LONG_PRESS_MS);
     },
     true,
   );
-  for (const e of ['pointerup', 'pointercancel', 'pointermove', 'scroll']) document.addEventListener(e, cancel, true);
+  // pointercancel/touchcancel are deliberately not used: Android fires them when text selection starts, long before the press ends.
+  document.addEventListener('touchmove', (ev) => {
+    const t = ev.touches[0];
+    if (t && moved(t.clientX, t.clientY)) cancel();
+  }, { capture: true, passive: true });
+  document.addEventListener('pointermove', (ev) => {
+    if (ev.pointerType !== 'touch' && moved(ev.clientX, ev.clientY)) cancel();
+  }, true);
+  for (const e of ['pointerup', 'touchend']) document.addEventListener(e, cancel, true);
+  // Stops Android's long-press text selection from hijacking the gesture.
+  const style = document.createElement('style');
+  style.textContent = 'h1,header,[data-wrapper-title]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}';
+  document.head.append(style);
+  document.addEventListener('contextmenu', (ev) => {
+    const t = ev.target as Element | null;
+    if (t?.closest?.('h1, header, [data-wrapper-title]')) ev.preventDefault();
+  }, true);
 }
 
 async function maybeCheck(throttle: boolean): Promise<void> {

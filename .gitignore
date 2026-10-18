@@ -6,3 +6,6 @@ android
 keystore.properties
 *.pem
 .env*
+bundled-site/*
+resources/icon.svg
+resources/splash.svg
