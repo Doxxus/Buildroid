@@ -129,7 +129,7 @@ Remove-Item -Recurse -Force android -ErrorAction SilentlyContinue
 ```
 
 1. **Initial site copy.** Replace everything in `bundled-site\` with a build of the site (the contents of its build output, with `index.html` at the root). This is what users see before the first update downloads.
-2. **Icon and splash (optional).** Replace `resources\icon.svg` and `resources\splash.svg`, then `npx @capacitor/assets generate --android` (run after step 4 in Part 4, once `android\` exists).
+2. **Icon and splash.** Replace `resources\icon.svg` and `resources\splash.svg`. They are only turned into Android icons when you run `npm run android:assets`, which must be done **after** `npm run android:add` (Part 4) creates `android\`, and again whenever you change the SVGs. Without it the app keeps the default Capacitor icon.
 
 ---
 
@@ -150,6 +150,7 @@ You can instead edit the defaults in `src\config.ts`; env vars override them.
 ```powershell
 cd f:\Documents\Personal\Code_Projects\Buildroid
 npm run android:add          # first time only (creates android/ and applies hardening)
+npm run android:assets       # generate launcher icons + splash from resources/*.svg
 "sdk.dir=" + ($env:ANDROID_HOME -replace '\\','\\') | Set-Content android\local.properties -Encoding ascii
 $env:CAP_DEBUG='true'
 npm run android:debug

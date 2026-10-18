@@ -68,7 +68,7 @@ npm run android:debug         # build, cap sync, patch, gradle assembleDebug
 Equivalent manual commands: `npm run build; npx cap add android; node scripts/patch-android.mjs; npx cap sync android; node scripts/patch-android.mjs; cd android; ./gradlew assembleDebug`.
 Always re-run `patch-android` after `cap sync`; the script is idempotent.
 
-Icons / splash: replace `resources/icon.svg` and `resources/splash.svg`, then `npx @capacitor/assets generate --android`.
+Icons / splash: replace `resources/icon.svg` and `resources/splash.svg`, then `npm run android:assets` (after `android/` exists).
 
 ### Signed release APK / AAB
 
