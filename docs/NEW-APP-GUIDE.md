@@ -174,6 +174,7 @@ Checks, in order:
 4. Failure path: temporarily set a wrong `BUNDLE_SIGNING_KEY`, re-run the workflow, then **Check now**. Expect `signature-invalid` and the old site still works. Restore the real key afterwards.
 5. Airplane mode, relaunch: the cached site loads.
 6. Back button navigates history, then exits. External links open in the system browser.
+7. Play audio and leave the app: a media notification (title, play/pause, prev/next) appears in the shade and lock screen; its buttons control playback. Allow the notification permission when prompted (Android 13+). For track titles/artist, have the site set `navigator.mediaSession.metadata` (and `setActionHandler` for next/previous); otherwise the page title is used.
 
 Logs: `& $adb logcat -d -s Capacitor:*`.
 

@@ -2,6 +2,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Network } from '@capacitor/network';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { installMediaNotification } from './native/media';
 import { openDebug, runCheck } from './ui';
 
 const LONG_PRESS_MS = 800;
@@ -93,6 +94,7 @@ function boot(): void {
   });
   installExternalLinks();
   installDebugTrigger();
+  installMediaNotification();
   void SplashScreen.hide();
   // Full page navigations re-run this script; only treat the first load of the session as a launch.
   if (!sessionStorage.getItem(LAUNCHED_FLAG)) {

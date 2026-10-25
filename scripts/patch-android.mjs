@@ -13,7 +13,7 @@ const main = join(app, 'src', 'main');
 // Native sources
 const javaDir = join(main, 'java', ...appId.split('.'));
 mkdirSync(javaDir, { recursive: true });
-for (const f of ['MainActivity.java', 'BundlePointerPlugin.java']) {
+for (const f of ['MainActivity.java', 'BundlePointerPlugin.java', 'MediaNotificationPlugin.java', 'MediaPlaybackService.java']) {
   writeFileSync(join(javaDir, f), readFileSync(join('native', f), 'utf8').replaceAll('__PACKAGE__', appId));
 }
 
@@ -54,6 +54,19 @@ manifest = manifest.replace(
         android:usesCleartextTraffic="false"
         android:networkSecurityConfig="@xml/network_security_config"`,
 );
+// Media notification: foreground service + permissions
+if (!manifest.includes('MediaPlaybackService')) {
+  manifest = manifest.replace(
+    '</application>',
+    `    <service android:name=".MediaPlaybackService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+    </application>`,
+  );
+}
+for (const perm of ['FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'POST_NOTIFICATIONS']) {
+  if (!manifest.includes(`android.permission.${perm}"`)) {
+    manifest = manifest.replace('</manifest>', `    <uses-permission android:name="android.permission.${perm}" />\n</manifest>`);
+  }
+}
 writeFileSync(manifestPath, manifest);
 
 // App name
@@ -94,8 +107,11 @@ if (!gradle.includes('signingConfigs')) {
 writeFileSync(gradlePath, gradle);
 
 const proguardPath = join(app, 'proguard-rules.pro');
-const keep = `-keep class ${appId}.BundlePointerPlugin { *; }\n`;
 const pg = existsSync(proguardPath) ? readFileSync(proguardPath, 'utf8') : '';
-if (!pg.includes('BundlePointerPlugin')) writeFileSync(proguardPath, pg + '\n' + keep);
+const keep = ['BundlePointerPlugin', 'MediaNotificationPlugin']
+  .filter((c) => !pg.includes(c))
+  .map((c) => `-keep class ${appId}.${c} { *; }\n`)
+  .join('');
+if (keep) writeFileSync(proguardPath, pg + '\n' + keep);
 
 console.log(`Patched android/ for ${appId} ("${appName}")`);
