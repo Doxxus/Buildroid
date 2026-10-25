@@ -147,3 +147,7 @@ rename or state persistence fails, host allowlist/redirect handling and token no
 
 Not verified in this repo: the Android native layer (Java plugin, manifest patching, Gradle release build) and on-device
 behavior. Smoke test on a device: install the debug APK, publish a release, relaunch, confirm the toast and the debug screen.
+
+
+## TODO
+- Make Buildroid easier to use (front-end GUI to target/build/deploy websites)
